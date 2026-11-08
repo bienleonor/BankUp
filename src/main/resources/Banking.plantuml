@@ -1,0 +1,179 @@
+@startuml
+
+package "Application / Menu" {
+    class Main {
+        +main(args: String[])
+    }
+
+    class BankUp {
+        -scanner: Scanner
+        -userService: UserService
+        -accountService: AccountService
+        -transactionService: TransactionService
+        -exit: boolean
+        +start()
+    }
+}
+
+package "Services" {
+    class UserService {
+        +register(user, password, details)
+        +login(username, password)
+    }
+
+    class AccountService {
+        -accountDAO: AccountDao
+        -userDao: UserDao
+        -userDetailsDao: UserDetailsDao
+        +createAccount()
+        +balanceInquiry()
+        +listAccounts()
+        +findAccountOrThrow(accountNumber)
+    }
+
+    class TransactionService {
+        -accountDAO: AccountDao
+        -transactionDAO: TransactionDao
+        -accountService: AccountService
+        +deposit()
+        +withdraw()
+        +transfer()
+        +viewTransactionHistory()
+        +miniStatement()
+    }
+}
+
+package "Models" {
+    class User {
+        -id: Long
+        -username: String
+        -password: String
+        -email: String
+        -createdAt: LocalDateTime
+    }
+
+    class UserDetails {
+        -userId: Long
+        -firstName: String
+        -middleName: String
+        -lastName: String
+        -birthdate: LocalDate
+        -createdAt: LocalDateTime
+        +getFullName()
+    }
+
+    class Account {
+        -id: Long
+        -userId: Long
+        -accountNumber: String
+        -accountName: String
+        -balance: BigDecimal
+        -createdAt: LocalDateTime
+    }
+
+    class Transaction {
+        -id: Long
+        -transactionReference: String
+        -accountNumber: String
+        -transactionType: TransactionType
+        -amount: BigDecimal
+        -balance: BigDecimal
+        -referenceAccount: String
+        -remarks: String
+        -createdAt: LocalDateTime
+    }
+
+    enum TransactionType {
+        DEPOSIT
+        WITHDRAW
+        TRANSFER_OUT
+        TRANSFER_IN
+    }
+}
+
+package "DAO Interfaces" {
+    interface UserDao
+    interface UserDetailsDao
+    interface AccountDao
+    interface TransactionDao
+}
+
+package "DAO Implementations" {
+    class UserDAOImp
+    class UserDetailsDAOImp
+    class AccountDAOImp
+    class TransactionDAOImp
+}
+
+package "Utilities" {
+    class Session {
+        -currentUser: User
+        +setCurrentUser(user)
+        +getCurrentUser()
+        +isLoggedIn()
+        +logout()
+    }
+
+    class PasswordUtil {
+        +hash(password)
+        +verify(password, hash)
+    }
+
+    class ReferenceNumberGenerator {
+        +generate()
+    }
+}
+
+package "Configuration" {
+    class DBConnection {
+        +getConnection(): Connection
+    }
+}
+
+package "Exceptions" {
+    class AccountNotFoundException
+    class InsufficientBalanceException
+    class InvalidTransactionException
+}
+
+Main --> BankUp
+BankUp --> UserService
+BankUp --> AccountService
+BankUp --> TransactionService
+BankUp --> Session
+
+UserService --> UserDao
+UserService --> UserDetailsDao
+UserService --> PasswordUtil
+UserService --> DBConnection
+UserService --> User
+UserService --> UserDetails
+
+AccountService --> AccountDao
+AccountService --> UserDao
+AccountService --> UserDetailsDao
+AccountService --> Account
+AccountService --> User
+AccountService --> UserDetails
+AccountService --> Session
+AccountService --> DBConnection
+
+TransactionService --> AccountDao
+TransactionService --> TransactionDao
+TransactionService --> AccountService
+TransactionService --> Account
+TransactionService --> Transaction
+TransactionService --> TransactionType
+TransactionService --> ReferenceNumberGenerator
+
+UserDAOImp ..|> UserDao
+UserDetailsDAOImp ..|> UserDetailsDao
+AccountDAOImp ..|> AccountDao
+TransactionDAOImp ..|> TransactionDao
+
+User "1" -- "0..*" Account : userId
+User "1" -- "1" UserDetails : userId
+Account "1" -- "0..*" Transaction : accountNumber
+Transaction --> TransactionType
+
+@enduml
